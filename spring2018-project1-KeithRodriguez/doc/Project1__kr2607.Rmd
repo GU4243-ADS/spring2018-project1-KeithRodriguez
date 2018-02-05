@@ -1,0 +1,395 @@
+---
+title: "Project1__kr2607"
+author: "Keith Rodriguez"
+date: "February 5, 2018"
+output: html_document
+---
+
+
+## Setup the libraries
+
+```{r, message = F, warning = F}
+packages.used <- c("ggplot2", "dplyr", "tibble", "tidyr",  "stringr", "tidytext", "topicmodels", "wordcloud", "ggridges")
+
+# check packages that need to be installed.
+packages.needed <- setdiff(packages.used, intersect(installed.packages()[,1], packages.used))
+
+# install additional packages
+if(length(packages.needed) > 0) {
+  install.packages(packages.needed, dependencies = TRUE, repos = 'http://cran.us.r-project.org')
+}
+
+library(plyr)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+library(tidyr)
+library(stringr)
+library(tidytext)
+library(topicmodels)
+library(wordcloud)
+library(ggridges)
+
+source("../libs/multiplot.R")
+```
+
+## Read data
+
+```{r}
+spooky <- read.csv('../data/spooky.csv', as.is = TRUE)
+```
+
+```{r}
+sum(is.na(spooky))
+spooky$author <- as.factor(spooky$author)
+```
+
+## Data Cleaning
+
+We first use the `unnest_tokens()` function to drop all punctuation and transform all words into lower case.  At least for now, the punctuation isn't really important to our analysis -- we want to study the words.  
+
+```{r}
+# Make a table with one word per row and remove `stop words` (i.e. the common words).
+spooky_wrd <- unnest_tokens(spooky, word, text)
+spooky_wrd <- anti_join(spooky_wrd, stop_words, by = "word")
+````
+
+
+
+## Word Frequency
+
+Now we study some of the most common words in the entire data set.  With the below code we plot the fifty most common words in the entire datset. We see that "time", "life", and "night" all appear frequently.
+
+```{r}
+# Words is a list of words, and freqs their frequencies
+words <- count(group_by(spooky_wrd, word))$word
+freqs <- count(group_by(spooky_wrd, word))$n
+
+head(sort(freqs, decreasing = TRUE))
+
+png("../figs/Wordcloud_all.png")
+wordcloud(words, freqs, max.words = 50, color = c("purple4", "red4", "black"))
+dev.off()
+```
+
+We can compare the way the authors use the most frequent words too.
+
+```{r}
+# Counts number of times each author used each word.
+author_words <- count(group_by(spooky_wrd, word, author))
+
+# Counts number of times each word was used.
+all_words    <- rename(count(group_by(spooky_wrd, word)), all = n)
+
+author_words <- left_join(author_words, all_words, by = "word")
+author_words <- arrange(author_words, desc(all))
+author_words <- ungroup(head(author_words, 81))
+  
+ggplot(author_words) +
+  geom_col(aes(reorder(word, all, FUN = min), n, fill = author)) +
+  xlab(NULL) +
+  coord_flip() +
+  facet_wrap(~ author) +
+  theme(legend.position = "none")
+```
+
+## Data Visualization
+
+We'll do some simple numerical summaries of the data to provide some nice visualizations.
+
+```{r, message = FALSE}
+p1 <- ggplot(spooky) +
+      geom_bar(aes(author, fill = author)) +
+      theme(legend.position = "none")
+
+
+spooky$sen_length <- str_length(spooky$text)
+head(spooky$sen_length)
+
+p2 <- ggplot(spooky) +
+      geom_density_ridges(aes(sen_length, author, fill = author)) +
+      scale_x_log10() +
+      theme(legend.position = "none") +
+      labs(x = "Sentence length [# characters]")
+
+
+spooky_wrd$word_length <- str_length(spooky_wrd$word)
+head(spooky_wrd$word_length)
+
+p3 <- ggplot(spooky_wrd) +
+      geom_density(aes(word_length, fill = author), bw = 0.05, alpha = 0.3) +
+      scale_x_log10() +
+      theme(legend.position = "none") +
+      labs(x = "Word length [# characters]")
+
+layout <- matrix(c(1, 2, 1, 3), 2, 2, byrow = TRUE)
+multiplot(p1, p2, p3, layout = layout)
+```
+
+The above polts show us 2 important things about EAP, as noted in class. Poe is featured the most often and his sentence length is more variable.  We also see that MWS has the longest sentences of the trio while HPL's sentences tend to be the most consistent of the 3.
+
+
+##Punctuation Analysis
+
+```{r}
+spooky$sen_length<- nchar(spooky$text)
+spooky$type_of_punctuations <- unlist(lapply(spooky$text, function(x) {length(gregexpr("(;|,|:)", x)[[1]])}))
+
+qplot(spooky$author,spooky$type_of_punctuations
+    )
+
+
+ggplot(spooky, aes(author, type_of_punctuations, fill = author)) + 
+  geom_boxplot() + 
+  coord_flip() 
+
+
+```
+
+These two graphs- essentialy the same- show an important distinction in punctuation usage. I took all punctuation, which, with the exception of the period, indicate some form of sentence elongation, and graphed it based on author. (the above graph is types of punctuation utilized whereas the below graph is the raw number of punctuation symbols used in writing.) HPL has by far the most limited punctuation usage; this makes sense given that he also varies the least in sentence length. As we will also see, Lovecraft has the most negative writing, perhaps an indication that increased punctuation is indicative of increased positive sentiment.
+
+Shelley has the outlier and also the most dense plot; perhaps borrowing from her also dense sentence length plot. her tendency to have long sentences is definitely related to her usage of much punctuation in a sentence.
+
+```{r}
+spooky$semi<-str_count(spooky$text,";")
+spooky$comma<-str_count(spooky$text,",")
+spooky$period<-str_count(spooky$text,".")
+spooky$paren<-str_count(spooky$text,"()")
+spooky$punct<-spooky$semi+spooky$comma+spooky$period+spooky$paren
+
+
+ggplot(spooky, aes(author, paren, fill = author)) + 
+  geom_boxplot() + 
+  coord_flip() 
+
+
+```
+```{r}
+
+head(sort(spooky$punct,decreasing=T))
+max<-spooky[spooky$punct==9339,]
+max<-max$text
+
+get_sentiments()
+max<-tokenizers::tokenize_sentences(max)
+
+
+#maxsentiments <- inner_join(max, get_sentiments('nrc'), by = "word")
+
+
+```
+By looking at the longest sentence and the one featuring the most punctuation, written by Mary Shelley, we can hope to see the relationship between positivty and punctuation. Here we have words like adoration, light, spirit, divine, and love, all reflecting on Shelley's style and positive outlook.
+
+
+
+## TF-IDF
+
+```{r}
+frequency <- count(spooky_wrd, author, word)
+tf_idf    <- bind_tf_idf(frequency, word, author, n)
+head(tf_idf)
+tail(tf_idf)
+
+tf_idf    <- arrange(tf_idf, desc(tf_idf))
+tf_idf    <- mutate(tf_idf, word = factor(word, levels = rev(unique(word))))
+
+# Grab the top thirty tf_idf scores in all the words 
+tf_idf_30 <- top_n(tf_idf, 30, tf_idf)
+
+ggplot(tf_idf_30) +
+  geom_col(aes(word, tf_idf, fill = author)) +
+  labs(x = NULL, y = "TF-IDF values") +
+  theme(legend.position = "top", axis.text.x  = element_text(angle=45, hjust=1, vjust=0.9))
+```
+
+
+```{r}
+# Grab the top twenty tf_idf scores in all the words for each author
+tf_idf <- ungroup(top_n(group_by(tf_idf, author), 20, tf_idf))
+  
+ggplot(tf_idf) +
+  geom_col(aes(word, tf_idf, fill = author)) +
+  labs(x = NULL, y = "tf-idf") +
+  theme(legend.position = "none") +
+  facet_wrap(~ author, ncol = 3, scales = "free") +
+  coord_flip() +
+  labs(y = "TF-IDF values")
+```
+
+# Sentiment Analysis
+
+
+```{r}
+# Keep words that have been classified within the NRC lexicon.
+get_sentiments('nrc')
+sentiments <- inner_join(spooky_wrd, get_sentiments('nrc'), by = "word")
+
+count(sentiments, sentiment)
+count(sentiments, author, sentiment)
+
+ggplot(count(sentiments, sentiment)) + 
+  geom_col(aes(sentiment, n, fill = sentiment))
+
+ggplot(count(sentiments, author, sentiment)) + 
+  geom_col(aes(sentiment, n, fill = sentiment)) + 
+  facet_wrap(~ author) +
+  coord_flip() +
+  theme(legend.position = "none")
+```
+
+
+## Comparing Positivity
+
+Let's only study the "positive" words.  Note that the amount of "postive" words attributed to each author varies greatly, and the relative frequency of "positive" words to the other sentiments also varies between authors.
+
+```{r}
+nrc_pos <- filter(get_sentiments('nrc'), sentiment == "positive")
+nrc_pos
+
+positive <- inner_join(spooky_wrd, nrc_pos, by = "word")
+head(positive)
+count(positive, word, sort = TRUE)
+```
+
+Now we plot a frequency comparison of these "positive" words.  Namely, we show the frequencies of the overall most frequently-used positive words split between the three authors. 
+
+```{r}
+pos_words     <- count(group_by(positive, word, author))
+pos_words_all <- count(group_by(positive, word))
+
+pos_words <- left_join(pos_words, pos_words_all, by = "word")
+pos_words <- arrange(pos_words, desc(n.y))
+pos_words <- ungroup(head(pos_words, 81))
+
+# Note the above is the same as
+# pos_words <- pos_words  %>%
+#                left_join(pos_words_all, by = "word") %>%
+#                arrange(desc(n.y)) %>%
+#                head(81) %>%
+#                ungroup()
+
+ggplot(pos_words) +
+  geom_col(aes(reorder(word, n.y, FUN = min), n.x, fill = author)) +
+  xlab(NULL) +
+  coord_flip() +
+  facet_wrap(~ author) +
+  theme(legend.position = "none")
+```
+Here we find that Mary Shelley is by far the most romantic author, as evidenced by her disproportiate use of the word love, among others. Terms such as hope, friend, and beauty are among her most used. On the contrary, HPL remains the most grim of the authors,, almost never using love, and preferring words like white (perhaps an indication of ghost-like qualities) and sea (evocative of mystery and uncertainty).
+
+
+
+
+# Topic Models
+
+
+```{r}
+# Counts how many times each word appears in each sentence
+sent_wrd_freqs <- count(spooky_wrd, id, word)
+head(sent_wrd_freqs)
+
+# Creates a DTM matrix
+spooky_wrd_tm <- cast_dtm(sent_wrd_freqs, id, word, n)
+spooky_wrd_tm
+length(unique(spooky_wrd$id))
+length(unique(spooky_wrd$word))
+```
+
+The matrix `spooky_wrd_tm` is a sparse matrix with 19467 rows, corresponding to the 19467 ids (or originally, sentences) in the `spooky_wrd` dataframe, and 24941 columns corresponding to the total number of unique words in the `spooky_wrd` dataframe.  So each row of `spooky_wrd_tm` corresponds to one of the original sentences.  The value of the matrix at a certain position is then the number of occurences of that word (determined by the column) in this specific sentence (determined by the row).  Since most sentence/word pairings don't occur, the matrix is sparse meaning there are many zeros.
+
+For LDA we must pick the number of possible topics.  Let's try 12, though this selection is admittedly arbitrary.
+
+```{r}
+spooky_wrd_lda    <- LDA(spooky_wrd_tm, k = 12, control = list(seed = 1234))
+spooky_wrd_topics <- tidy(spooky_wrd_lda, matrix = "beta")
+spooky_wrd_topics
+```
+
+## Topics Terms
+
+We note that in the above we use the `tidy` function to extract the per-topic-per-word probabilities, called "beta" or $\beta$, for the model.  The final output has a one-topic-per-term-per-row format. For each combination, the model computes the probability of that term being generated from that topic. For example, the term “content” has a $1.619628 \times 10^{-5}$ probability of being generated from topic 4.  We visualize the top terms (meaning the most likely terms associated with each topic) in the following.
+
+```{r}
+# Grab the top five words for each topic.
+spooky_wrd_topics_5 <- ungroup(top_n(group_by(spooky_wrd_topics, topic), 5, beta))
+spooky_wrd_topics_5 <- arrange(spooky_wrd_topics_5, topic, -beta)
+spooky_wrd_topics_5 <- mutate(spooky_wrd_topics_5, term = reorder(term, beta))
+
+ggplot(spooky_wrd_topics_5) +
+  geom_col(aes(term, beta, fill = factor(topic)), show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free", ncol = 4) +
+  coord_flip()
+```
+
+In the above, we see that the first topic is characterized by words like "love", "earth", and "words" while the third topic includes the word "thousand", and the fifth topic the word "beauty".  Note that the words "eyes" and "time" appear in many topics.  This is the advantage to topic modelling as opposed to clustering when using natural language -- often a word may be likely to appear in documents characterized by multiple topics.
+
+We can also study terms that have the greatest difference in probabilities between the topics, ignoring the words that are shared with similar frequency between topics. We choose only the first 3 topics as example and visualise the differences by plotting log ratios: $log_{10}(\beta \text{ of topic x }/ \beta \text{ of topic y})$. So if a word is 10 times more frequent in topic x the log ratio will be 1, whereas it will be -1 if the word is 10 times more frequent in topic y. 
+
+```{r}
+spooky_wrd_topics <- mutate(spooky_wrd_topics, topic = paste0("topic", topic))
+spooky_wrd_topics <- spread(spooky_wrd_topics, topic, beta)
+
+spooky_wrd_topics_12 <- filter(spooky_wrd_topics, topic2 > .001 | topic3 > .001)
+spooky_wrd_topics_12 <- mutate(spooky_wrd_topics_12, log_ratio = log10(topic2 / topic1))
+spooky_wrd_topics_12 <- group_by(spooky_wrd_topics_12, direction = log_ratio > 0)
+spooky_wrd_topics_12 <- ungroup(top_n(spooky_wrd_topics_12, 5, abs(log_ratio)))
+spooky_wrd_topics_12 <- mutate(spooky_wrd_topics_12, term = reorder(term, log_ratio))
+
+p1 <- ggplot(spooky_wrd_topics_12) +
+      geom_col(aes(term, log_ratio, fill = log_ratio > 0)) +
+      theme(legend.position = "none") +
+      labs(y = "Log ratio of beta in topic 2 / topic 1") +
+      coord_flip()
+
+
+spooky_wrd_topics_23 <- filter(spooky_wrd_topics, topic2 > .001 | topic3 > .001)
+spooky_wrd_topics_23 <- mutate(spooky_wrd_topics_23, log_ratio = log10(topic3 / topic2))
+spooky_wrd_topics_23 <- group_by(spooky_wrd_topics_23, direction = log_ratio > 0)
+spooky_wrd_topics_23 <- ungroup(top_n(spooky_wrd_topics_23, 5, abs(log_ratio)))
+spooky_wrd_topics_23 <- mutate(spooky_wrd_topics_23, term = reorder(term, log_ratio))
+
+p2 <- ggplot(spooky_wrd_topics_23) +
+      geom_col(aes(term, log_ratio, fill = log_ratio > 0)) +
+      theme(legend.position = "none") +
+      labs(y = "Log ratio of beta in topic 3 / topic 2") +
+      coord_flip()
+
+spooky_wrd_topics_13 <- filter(spooky_wrd_topics, topic3 > .001 | topic1 > .001)
+spooky_wrd_topics_13 <- mutate(spooky_wrd_topics_13, log_ratio = log10(topic3 / topic1))
+spooky_wrd_topics_13 <- group_by(spooky_wrd_topics_13, direction = log_ratio > 0)
+spooky_wrd_topics_13 <- ungroup(top_n(spooky_wrd_topics_13, 5, abs(log_ratio)))
+spooky_wrd_topics_13 <- mutate(spooky_wrd_topics_13, term = reorder(term, log_ratio))
+
+p3 <- ggplot(spooky_wrd_topics_13) +
+      geom_col(aes(term, log_ratio, fill = log_ratio > 0)) +
+      theme(legend.position = "none") +
+      labs(y = "Log ratio of beta in topic 3 / topic 1") +
+      coord_flip()
+
+
+layout <- matrix(c(1,2,3), 3, 1, byrow = TRUE)
+multiplot(p1, p2, p3, layout = layout)
+```
+In the above, the words more common to topic 2 than topic 1 are "moon", "air", and "window" while the words more common to topic 1 are "moment", "marie", and "held".
+
+## Sentence Topics
+
+Above we look at the words representing each topic, we can also study the topics representing each documents, or in our case sentence.  We use the `tidy` function to extract the per-document-per-topic probabilities, called "gamma" or $\gamma$, for the model.
+
+```{r}
+spooky_wrd_docs <- tidy(spooky_wrd_lda, matrix = "gamma")
+spooky_wrd_docs
+```
+
+The above table holds the estimated proportion of words from that sentence (id) that are generated from that topic. For example, the model estimates that only about 8.301% of the words in sentence id00001 were generated from topic 1.
+
+```{r}
+author_topics <- left_join(spooky_wrd_docs, spooky, by = c("document" = "id"))
+author_topics$topic <- as.factor(author_topics$topic)
+
+# Chooses the top topic per sentence
+author_topics <- ungroup(top_n(group_by(author_topics, document), 1, gamma))
+
+# Counts the number of sentences represented by each topic per author 
+author_topics <- ungroup(count(group_by(author_topics, author, topic)))
+```

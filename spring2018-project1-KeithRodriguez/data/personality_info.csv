@@ -1,0 +1,59 @@
+File,Term,type,links,Personality,Recession,Assassination
+GeorgeWashington,1,inaug,"April 30, 1789",-1,0,0
+GeorgeWashington,2,inaug,"March 4, 1793",-1,0,0
+JohnAdams,1,inaug,"March 4, 1797",1,0,0
+ThomasJefferson,1,inaug,"March 4, 1801",-1,0,0
+ThomasJefferson,2,inaug,"March 4, 1805",-1,0,0
+JamesMadison,1,inaug,"March 4, 1809",-1,0,0
+JamesMadison,2,inaug,"March 4, 1813",-1,0,0
+JamesMonroe,1,inaug,"March 4, 1817",1,0,0
+JamesMonroe,2,inaug,"March 4, 1821",1,0,0
+JohnQuincyAdams,1,inaug,"March 4, 1825",-1,0,0
+AndrewJackson,1,inaug,"March 4, 1829",1,0,1
+AndrewJackson,2,inaug,"March 4, 1833",1,0,1
+MartinvanBuren,1,inaug,"March 4, 1837",-1,1,0
+WilliamHenryHarrison,1,inaug,"March 4, 1841",1,1,0
+JamesKPolk,1,inaug,"March 4, 1845",-1,0,0
+ZacharyTaylor,1,inaug,"March 5, 1849",-1,0,0
+FranklinPierce,1,inaug,"March 4, 1853",1,0,0
+JamesBuchanan,1,inaug,"March 4, 1857",1,1,0
+AbrahamLincoln,1,inaug,"March 4, 1861",-1,1,1
+AbrahamLincoln,2,inaug,"March 4, 1865",-1,1,1
+UlyssesSGrant,1,inaug,"March 4, 1869",-1,0,0
+UlyssesSGrant,2,inaug,"March 4, 1873",-1,1,0
+RutherfordBHayes,1,inaug,"March 5, 1877",1,1,0
+JamesGarfield,1,inaug,"March 4, 1881",1,0,1
+GroverCleveland-I,1,inaug,"March 4, 1885",1,1,0
+BenjaminHarrison,1,inaug,"March 4, 1889",-1,0,0
+GroverCleveland-II,2,inaug,"March 4, 1893",1,1,0
+WilliamMcKinley,1,inaug,"March 4, 1897",1,1,1
+WilliamMcKinley,2,inaug,4-Mar-01,1,0,1
+TheodoreRoosevelt,1,inaug,4-Mar-05,1,0,1
+WilliamHowardTaft,1,inaug,4-Mar-09,-1,0,1
+WoodrowWilson,1,inaug,4-Mar-13,-1,1,0
+WoodrowWilson,2,inaug,4-Mar-17,-1,0,0
+WarrenGHarding,1,inaug,4-Mar-21,-1,1,0
+CalvinCoolidge,1,inaug,4-Mar-25,-1,0,0
+HerbertHoover,1,inaug,4-Mar-29,-1,0,1
+FranklinDRoosevelt,1,inaug,4-Mar-33,1,1,1
+FranklinDRoosevelt,2,inaug,20-Jan-37,1,1,1
+FranklinDRoosevelt,3,inaug,20-Jan-41,1,0,1
+FranklinDRoosevelt,4,inaug,20-Jan-45,1,1,1
+HarrySTruman,1,inaug,20-Jan-49,-1,1,1
+DwightDEisenhower,1,inaug,20-Jan-53,-1,0,0
+DwightDEisenhower,2,inaug,21-Jan-57,-1,0,0
+JohnFKennedy,1,inaug,20-Jan-61,-1,1,1
+LyndonBJohnson,1,inaug,20-Jan-65,1,0,0
+RichardNixon,1,inaug,20-Jan-69,1,0,1
+RichardNixon,2,inaug,20-Jan-73,1,0,1
+JimmyCarter,1,inaug,20-Jan-77,-1,0,1
+RonaldReagan,1,inaug,20-Jan-81,1,1,1
+RonaldReagan,2,inaug,21-Jan-85,1,0,1
+GeorgeBush,1,inaug,20-Jan-89,-1,0,1
+WilliamJClinton,1,inaug,20-Jan-93,1,0,1
+WilliamJClinton,2,inaug,20-Jan-97,1,0,1
+GeorgeWBush,1,inaug,20-Jan-01,1,0,1
+GeorgeWBush,2,inaug,20-Jan-05,1,0,1
+BarackObama,1,inaug,20-Jan-09,1,1,1
+BarackObama,2,inaug,21-Jan-13,1,0,1
+DonaldJTrump,1,inaug,20-Jan-17,1,0,0
